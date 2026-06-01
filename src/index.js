@@ -3,6 +3,7 @@ import cors from 'cors';
 
 import 'dotenv/config';
 import { connectMongoDB } from './db/connectMongoDb.js';
+import { errors } from 'celebrate';
 import { logger } from './middleware/logger.js';
 import { notFoundHandler } from './middleware/notFoundHandler.js';
 import { errorHandler } from './middleware/errorHandler.js';
@@ -18,6 +19,7 @@ app.use(logger);
 app.use(resumeRoutes);
 
 app.use(notFoundHandler);
+app.use(errors());
 app.use(errorHandler);
 
 await connectMongoDB();
