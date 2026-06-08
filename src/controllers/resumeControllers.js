@@ -1,13 +1,33 @@
 import { Resume } from "../models/resume.js";
 import createHttpError from "http-errors";
-
-export const getResumes= async (req,res)=>{
+import { createEmptyResume, syncUserInfoToResumes} from "../services/resumeServices.js";
+export const getResumesForAdmin= async (req,res)=>{
     const resumes= await Resume.find();
-    res.status(200).json(resumes);
+   res.status(200).json(resumes);
+};
+export const getAllResumes= async (req,res)=>{
+  const { page = 1, perPage = 10 } = req.query;
+  const skip = (page - 1) * perPage;
+  const resumesQuery=Resume.find({owner:req.user._id});
+  const [totalResumes, resumes] =await Promise.all([
+      resumesQuery.clone().countDocuments(),
+      resumesQuery.skip(skip).limit(perPage),
+    ]);
+    const totalPages = Math.ceil(totalResumes / perPage);
+     res.status(200).json({
+      resumes,
+      perPage,
+      page,
+      totalPages
+     });
 };
 export const createResume = async (req,res)=>{
-   const resume= await Resume.create(req.body);
-   res.status(201).json(resume);
+  const { _id, username, email } = req.user;
+    const resume = await createEmptyResume(_id, {
+      fullname: username,
+      email: email
+    });
+   res.status(200).json(resume);
 };
 export const getResumeById = async (req,res)=>{
   const {resumeId} = req.params;
@@ -17,17 +37,37 @@ export const getResumeById = async (req,res)=>{
   }
   res.status(200).json(resume);
 };
-export const updateResumePersInfo = async (req,res)=>{
-  const {resumeId} = req.params;
-  const body = req.body;
-  const resume = await Resume.findByIdAndUpdate({_id:resumeId}, body, {returnDocument:'after'});
-  res.status(200).json(resume);
+export const updateResumePersInfo = async (req, res, next) => {
+  try {
+    const { resumeId } = req.params;
+    const { job, phone, location, summary } = req.body;
+
+    const resume = await Resume.findOneAndUpdate(
+      { _id: resumeId, owner: req.user._id },
+      {
+        $set: {
+          'personalInfo.job': job,
+          'personalInfo.phone': phone,
+          'personalInfo.location': location,
+          'personalInfo.summary': summary,
+        },
+      },
+      { new: true }
+    );
+
+    if (!resume) throw createHttpError(404, 'Resume not found');
+
+    res.status(200).json(resume);
+  } catch (err) {
+    next(err);
+  }
 };
 export const updateSkills = async (req,res)=>{
   const {resumeId}=req.params;
   const {skills}=req.body;
   const result = await Resume.findByIdAndUpdate(
-    resumeId,
+    {resumeId,
+    },
     { $set: { skills } },
     { new: true },
     { returnDocument:"after"}
@@ -43,7 +83,9 @@ export const updateLanguage = async (req, res) => {
   }
 
   const result = await Resume.findOneAndUpdate(
-    { _id: resumeId, "languages._id": langId },
+    { _id: resumeId,
+       "languages._id": langId,
+   },
     { $set: updateFields },
     { new: true, runValidators: true },
     {returnDocument: 'after'}
@@ -61,7 +103,9 @@ export const updateExperience = async (req, res) => {
   }
 
   const result = await Resume.findOneAndUpdate(
-    { _id: resumeId, "experience._id": expId },
+    { _id: resumeId,
+      "experience._id": expId,
+     },
     { $set: updateFields },
     { new: true, runValidators: true },
     {returnDocument: 'after'}
@@ -79,7 +123,7 @@ export const updateEducation = async (req, res) => {
   }
 
   const result = await Resume.findOneAndUpdate(
-    { _id: resumeId, "education._id": eduId },
+    { _id: resumeId, "education._id": eduId , userId: req.user._id, },
     { $set: updateFields },
     { new: true, runValidators: true },
     {returnDocument: 'after'}
@@ -92,10 +136,49 @@ export const  deleteResume = async (req,res)=>{
   const {resumeId} = req.params;
   const resume = await Resume.findOneAndDelete({
     _id:resumeId,
+    userId: req.user._id,
   });
   if(!resume){
     throw createHttpError(404,'Resume not found');
   }
   res.status(200).json(resume);
+};
+export const addExperience = async (req, res) => {
+  const { resumeId } = req.params;
+
+  const result = await Resume.findByIdAndUpdate(
+    resumeId ,
+    { $push: { experience: req.body } },
+    { new: true }
+  );
+
+  if (!result) return res.status(404).json({ message: "Resume not found" });
+
+  res.status(201).json(result);
+};
+export const addEducation = async (req, res) => {
+  const { resumeId } = req.params;
+
+  const result = await Resume.findByIdAndUpdate(
+    resumeId ,
+    { $push: { education: req.body } },
+    { new: true }
+  );
+
+  if (!result) return res.status(404).json({ message: "Resume not found" });
+
+  res.status(201).json(result);
+};
+export const addLanguage = async (req, res) => {
+  const { resumeId } = req.params;
+  const result = await Resume.findByIdAndUpdate(
+   resumeId ,
+    { $push: { languages: req.body } },
+    { new: true }
+  );
+
+  if (!result) return res.status(404).json({ message: "Resume not found" });
+
+  res.status(201).json(result);
 };
 

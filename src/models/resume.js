@@ -1,7 +1,8 @@
-import { model, Schema } from 'mongoose';
+import { model, Schema, Types} from 'mongoose';
 
 const resumeSchema = new Schema(
   {
+    owner: { type: Types.ObjectId, ref: 'User', required: true },
     personalInfo: {
       fullname: { type: String, required: true },
       job: String,
