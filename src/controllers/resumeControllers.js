@@ -1,10 +1,7 @@
 import { Resume } from "../models/resume.js";
 import createHttpError from "http-errors";
-import { createEmptyResume, syncUserInfoToResumes} from "../services/resumeServices.js";
-export const getResumesForAdmin= async (req,res)=>{
-    const resumes= await Resume.find();
-   res.status(200).json(resumes);
-};
+import { createEmptyResume} from "../services/resumeServices.js";
+
 export const getAllResumes= async (req,res)=>{
   const { page = 1, perPage = 10 } = req.query;
   const skip = (page - 1) * perPage;
@@ -155,6 +152,54 @@ export const addExperience = async (req, res) => {
   if (!result) return res.status(404).json({ message: "Resume not found" });
 
   res.status(201).json(result);
+};
+export const deleteExperience= async (req,res)=>{
+
+  const { resumeId, expId } = req.params;
+
+    const resume = await Resume.findOneAndUpdate(
+      { _id: resumeId, owner: req.user._id },
+      { $pull: { experience: { _id: expId } } },
+      { new: true }
+    );
+    if (!resume) throw createHttpError(404, 'Resume not found');
+    res.status(200).json(resume);
+};
+export const deleteEducation= async (req,res)=>{
+
+  const { resumeId, eduId } = req.params;
+
+    const resume = await Resume.findOneAndUpdate(
+      { _id: resumeId, owner: req.user._id },
+      { $pull: { education: { _id: eduId } } },
+      { new: true }
+    );
+    if (!resume) throw createHttpError(404, 'Resume not found');
+    res.status(200).json(resume);
+};
+export const deleteLanguage= async (req,res)=>{
+
+  const { resumeId, lanId } = req.params;
+
+    const resume = await Resume.findOneAndUpdate(
+      { _id: resumeId, owner: req.user._id },
+      { $pull: { languages: { _id: lanId } } },
+      { new: true }
+    );
+    if (!resume) throw createHttpError(404, 'Resume not found');
+    res.status(200).json(resume);
+};
+export const deleteSkill = async (req, res, next) => {
+    const { resumeId } = req.params;
+    const { skill } = req.body;
+
+    const resume = await Resume.findOneAndUpdate(
+      { _id: resumeId, owner: req.user._id },
+      { $pull: { skills: skill } },
+      { new: true }
+    );
+    if (!resume) throw createHttpError(404, 'Resume not found');
+    res.status(200).json(resume);
 };
 export const addEducation = async (req, res) => {
   const { resumeId } = req.params;
