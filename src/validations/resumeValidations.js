@@ -18,7 +18,7 @@ export const createResumeSchema = {
     phone: Joi.string().pattern(/^\+?[0-9\s-]{7,15}$/),
     location: Joi.string(),
     summary: Joi.string().max(500),
-  }).required(),
+  }),
 
   experience: Joi.array().items(
     Joi.object({
