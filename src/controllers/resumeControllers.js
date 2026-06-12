@@ -133,7 +133,7 @@ export const  deleteResume = async (req,res)=>{
   const {resumeId} = req.params;
   const resume = await Resume.findOneAndDelete({
     _id:resumeId,
-    ownerId: req.user._id,
+    owner: req.user._id,
   });
   if(!resume){
     throw createHttpError(404,'Resume not found');
