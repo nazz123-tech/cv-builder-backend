@@ -12,9 +12,9 @@ export const getResumesSchema = {
 export const createResumeSchema = {
   [Segments.BODY]: Joi.object({
   personalInfo: Joi.object({
-    fullname: Joi.string().min(3).max(50).required(),
+    fullname: Joi.string().min(3).max(50),
     job: Joi.string().min(2).max(50),
-    email: Joi.string().email().required(),
+    email: Joi.string().email(),
     phone: Joi.string().pattern(/^\+?[0-9\s-]{7,15}$/),
     location: Joi.string(),
     summary: Joi.string().max(500),
@@ -47,7 +47,7 @@ export const createResumeSchema = {
       level: Joi.string().valid('Basic', 'Intermediate', 'Upper-Intermediate', 'Advanced').required(),
     })
   ),
-})
+}).optional()
 };
 
 const objectIdValidator = (value, helpers) => {
