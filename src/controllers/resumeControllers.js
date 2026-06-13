@@ -59,16 +59,18 @@ export const updateResumePersInfo = async (req, res, next) => {
     next(err);
   }
 };
-export const updateSkills = async (req,res)=>{
-  const {resumeId}=req.params;
-  const {skills}=req.body;
+export const updateSkills = async (req, res) => {
+  const { resumeId } = req.params;
+  const { skills } = req.body;
+
   const result = await Resume.findByIdAndUpdate(
-    {resumeId,
-    },
+    resumeId,
     { $set: { skills } },
-    { new: true },
-    { returnDocument:"after"}
+    { new: true }
   );
+
+  if (!result) throw createHttpError(404, 'Resume not found');
+
   res.status(200).json(result);
 };
 export const updateLanguage = async (req, res) => {
